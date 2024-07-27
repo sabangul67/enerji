@@ -1,0 +1,2116 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Türkiye Elektrik Santralleri</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <!-- Font Awesome CSS for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <style>
+
+    /* Mobil tarayıcılar için medya sorgusu */
+@media (max-width: 768px) {
+  .tooltip-container .tooltip {
+    display: none; /* Tooltip'leri gizle */
+  }
+}
+
+
+
+    #harita {
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    .zoom-controls {
+      position: fixed;
+      top: 70px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      z-index: 1001;
+    }
+    .zoom-btn {
+      background: #222;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 20px;
+      margin-bottom: 5px;
+      transition: background 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    .zoom-btn:hover {
+      background: #333;
+    }
+    .zoom-btn i {
+      font-size: 22px;
+    }
+    .panel {
+      position: fixed;
+      top: 60px;
+      width: 200px;
+      height: calc(100vh - 70px);
+      background-color: #333;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      overflow-y: auto;
+      z-index: 1030;
+      display: none;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .panel.active {
+      display: block;
+    }
+    .left-panel {
+      left: 10px;
+      margin-right: 340px;
+    }
+    .right-panel {
+      right: 10px;
+      margin-left: 340px;
+    }
+    .toggle-btn {
+      position: fixed;
+      top: 10px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1001;
+      margin-bottom: 10px;
+    }
+    .left-btn {
+      left: 10px;
+    }
+    .right-btn {
+      right: 10px;
+    }
+    .toggle-btn i {
+      font-size: 18px;
+    }
+    .top-panel {
+      position: fixed;
+      top: 10px;
+      left: 60px;
+      right: 60px;
+      height: 40px;
+      background-color: #222;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      z-index: 1002;
+      box-sizing: border-box;
+      border-radius: 8px;
+    }
+    .top-panel i {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    .top-panel h1 {
+      font-size: 14px;
+      margin: 0;
+      font-weight: 400;
+    }
+    .bottom-panel {
+      justify-content: space-around;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+      position: fixed;
+      bottom: 0px;
+      left: 0;
+      right: 0;
+      height: 60px;
+      width: 100%;
+      background-color: #333;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5);
+      z-index: 1002;
+      padding: 10px 0;
+      box-sizing: border-box;
+    }
+    .bottom-panel .btn {
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      margin: 0 5px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .bottom-panel .btn:hover {
+ 
+      background-color: #555; /* Hover rengi */
+      transform: scale(1.1); /* Hover'da butonun büyümesi */
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+    .bottom-panel .btn i {
+      font-size: 22px;
+    }
+
+.bottom-panel .btn:active {
+  background-color: #666; /* Tıklama rengi */
+  transform: scale(1); /* Butonun tıklama sırasında orijinal boyuta dönmesi */
+}
+
+.bottom-panel .tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+
+    .accordion .card-header {
+      background-color: #444;
+      color: #ddd;
+      border: none;
+    }
+    .accordion .card-body {
+      background-color: #333;
+      color: #ddd;
+    }
+    .accordion .card {
+      border-radius: 8px;
+      border: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .accordion .btn {
+      display: flex;
+      align-items: center;
+      padding: 2px 2px;
+      border: none;
+      background: none;
+      color: #ddd;
+      font-size: 14px;
+      box-shadow: none;
+      border-radius: 2px;
+      margin-bottom: 1px;
+      
+    }
+    .accordion .btn i {
+      margin-right: 10px;
+      font-size: 16px;
+      margin-bottom: 2px; /* Butonlar arasına 2px boşluk eklenir */
+    }
+    .form-check {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .form-check-input {
+      margin-right: 10px;
+    }
+    .panel button {
+      display: block;
+      width: 100%;
+      background: #5a5b5f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .context-menu {
+            display: none;
+            position: absolute;
+            background: rgba(255, 255, 255, 0.0); /* Şeffaf arka plan */
+            border: 1px solid #ddd;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+            width: 150px; /* Sabit genişlik */
+        }
+        .context-menu .btn {
+            width: 100%; /* Butonlar menü genişliğine uyacak şekilde */
+            margin-bottom: 2px;
+            color: white;
+            background-color: #0c335a; /* Tek renk buton */
+            border: none;
+            font-size: 10px; /* Buton metin boyutu 10px */
+        }
+        .context-menu .btn:hover {
+            background-color: #05274b; /* Hover efekti */
+        }
+        #coordinates-table {
+          display: none;
+            position: left; /* Sabit konum */
+            bottom: 20px; /* Sayfanın altından 20px yukarıda */
+            right: 20px; /* Sayfanın sağından 20px uzaklıkta */
+            background: rgba(0, 0, 0, 0.8); /* Koyu şeffaf arka plan */
+            border: 1px solid #333;
+            padding: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        #coordinates-table table {
+          
+            font-size: 10px; /* Tablo yazı boyutu 10px */
+            width: 100%;
+            border-collapse: collapse;
+            color: #f8f9fa; /* Açık metin rengi */
+        }
+        #coordinates-table th, #coordinates-table td {
+            border: 1px solid #444;
+            padding: 5px;
+            text-align: left;
+        }
+        #coordinates-table th {
+            background-color: #222; /* Koyu başlık arka plan rengi */
+        }
+        #coordinates-table td {
+            word-break: break-all; /* Hücre içeriğini taşmasını önlemek için */
+        }
+/* Tooltip Container */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip */
+.tooltip-container .tooltip {
+  visibility: hidden;
+  width: 120px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Tooltip'in butonun üstünde yer almasını sağlar */
+  left: 50%;
+  margin-left: -60px; /* Tooltip'in ortalanmasını sağlar */
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.tooltip-container:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+  </style>
+</head>
+<body>
+
+  <!-- Top Panel -->
+  <div class="top-panel">
+    <i class="fas fa-bolt"></i>
+    <h1>Enerji Haritası</h1>
+  </div>
+
+  <!-- Left Toggle Button -->
+  <button class="toggle-btn left-btn" id="toggleLeftPanel"><i class="fas fa-bars"></i></button>
+
+  <!-- Right Toggle Button -->
+  <button class="toggle-btn right-btn" id="toggleRightPanel"><i class="fas fa-plus"></i></button>
+
+  <!-- Map Container -->
+  <div id="harita"></div>
+
+ <!-- Bottom Panel -->
+<div class="bottom-panel">
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton1" ><i class="fas fa-search"></i></button>
+    <div class="tooltip">Arama</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton2"><i class="fas fa-draw-polygon"></i></button>
+    <div class="tooltip">Çizim</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton3" ><i class="fas fa-upload"></i></button>
+    <div class="tooltip">Yükleme</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton4"><i class="fas fa-location-arrow"></i></button>
+    <div class="tooltip">Konum</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton5"><i class="fas fa-wind"></i></button>
+    <div class="tooltip">Rüzgar</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton6" ><i class="fas fa-sun"></i></button>
+    <div class="tooltip">Güneş</div>
+  </div>
+  <div class="tooltip-container">
+    <button class="btn" id="altbuton7"><i class="fas fa-tachometer-alt"></i></button>
+    <div class="tooltip">Türbinler</div>
+  </div>
+</div>
+<!-- Right Panel -->
+<div class="panel right-panel" id="rightPanel">
+  <div class="accordion" id="rightAccordion">
+    <!-- Accordion 1 -->
+    <div class="card">
+      <div class="card-header" id="rightHeadingOne">
+        <h5 class="mb-0">
+          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#rightCollapseOne" aria-expanded="true" aria-controls="rightCollapseOne">
+            <i class="fas fa-map"></i> Harita Altlığı
+          </button>
+        </h5>
+      </div>
+      <div id="rightCollapseOne" class="collapse show" aria-labelledby="rightHeadingOne" data-parent="#rightAccordion">
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox1">
+            <label class="form-check-label" for="mapcheckbox1">
+              Open Street Map
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox2">
+            <label class="form-check-label" for="mapcheckbox2">
+              Google Terrain
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox3">
+            <label class="form-check-label" for="mapcheckbox3">
+              Google Sokak
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox4">
+            <label class="form-check-label" for="mapcheckbox4">
+              Google Uydu
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox5">
+            <label class="form-check-label" for="mapcheckbox5">
+              Google Hybrid
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox6">
+            <label class="form-check-label" for="mapcheckbox6">
+              Siyah Beyaz
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="mapcheckbox7">
+            <label class="form-check-label" for="mapcheckbox7">
+              Yükseklik Haritası
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 2 -->
+    <div class="card">
+      <div class="card-header" id="rightHeadingTwo">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#rightCollapseTwo" aria-expanded="false" aria-controls="rightCollapseTwo">
+            <i class="fas fa-layer-group"></i> WMS Servisleri
+          </button>
+        </h5>
+      </div>
+      <div id="rightCollapseTwo" class="collapse" aria-labelledby="rightHeadingTwo" data-parent="#rightAccordion">
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox1">
+            <label class="form-check-label" for="wmscheckbox1">
+              OGM Mesçere
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox2">
+            <label class="form-check-label" for="wmscheckbox2">
+              Sit Alanları 
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox3">
+            <label class="form-check-label" for="wmscheckbox3">
+              Riskli Alanlar
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox4">
+            <label class="form-check-label" for="wmscheckbox4">
+             Anıt Ağaçlar
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox5">
+            <label class="form-check-label" for="wmscheckbox5">
+             Özel Çevre K.B.
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox6">
+            <label class="form-check-label" for="wmscheckbox6">
+            Kıyı Kenar Çizgisi
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="wmscheckbox7">
+            <label class="form-check-label" for="wmscheckbox7">
+            Yaban Hayatı KvGS
+            </label>
+          </div>                                                
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 3 -->
+    <div class="card">
+      <div class="card-header" id="rightHeadingThree">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#rightCollapseThree" aria-expanded="false" aria-controls="rightCollapseThree">
+           <i class="fas fa-map-marker-alt"></i> Harita Katmanları
+          </button>
+        </h5>
+      </div>
+      <div id="rightCollapseThree" class="collapse" aria-labelledby="rightHeadingThree" data-parent="#rightAccordion">
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="layerCheckbox1">
+            <label class="form-check-label" for="layerCheckbox1">
+              Ülke Sınırları
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="layerCheckbox2">
+            <label class="form-check-label" for="layerCheckbox2">
+              İl Sınırları
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="layerCheckbox3">
+            <label class="form-check-label" for="layerCheckbox3">
+            İlçe Sınırları
+            </label>
+          </div>
+        </div>
+        
+        <div id="coordinates-table">
+          <table>
+              <tbody>
+                  <tr>
+                      <th>Enlem:</th>
+                      <td id="lat-coordinate"></td>
+                  </tr>
+                  <tr>
+                      <th>Boylam:</th>
+                      <td id="lng-coordinate"></td>
+                  </tr>
+                  <tr>
+                      <td colspan="2" id="full-coordinates"></td>
+                  </tr>
+              </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Left Panel -->
+<div class="panel left-panel" id="leftPanel">
+  <h5>Bu Panel Beta Sürümdedir, Geliştirilecektir</h5>
+  <div class="accordion" id="leftAccordion">
+    <!-- Accordion 1 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingOne">
+        <h5 class="mb-0">
+          <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#leftCollapseOne" aria-expanded="true" aria-controls="leftCollapseOne">
+            <i class="fas fa-cogs"></i> Konumsal Araçlar
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseOne" class="collapse show" aria-labelledby="leftHeadingOne" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-cogs"></i>Anlık Konum (Tek Noktadan)</button>
+          <button class="btn"><i class="fas fa-tools"></i>Anlık Konum (İz-Nokta)</button>
+          <button class="btn"><i class="fas fa-tools"></i>Anlık Konum (İz-Doğru)</button>
+
+
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 2 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingTwo">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#leftCollapseTwo" aria-expanded="false" aria-controls="leftCollapseTwo">
+            <i class="fas fa-info-circle"></i> Gelişmiş Filtreleme
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseTwo" class="collapse" aria-labelledby="leftHeadingTwo" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-info"></i>İli:</button>
+          <button class="btn"><i class="fas fa-info"></i>İlçesi:</button>
+          <button class="btn"><i class="fas fa-info"></i>Şirket Adı:</button>
+          <button class="btn"><i class="fas fa-info"></i>Enerji Türü:</button>
+          <button class="btn"><i class="fas fa-info"></i>Lisans Türü:</button>
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 3 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingThree">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#leftCollapseThree" aria-expanded="false" aria-controls="leftCollapseThree">
+            <i class="fas fa-home"></i> Enerji Haberleri
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseThree" class="collapse" aria-labelledby="leftHeadingThree" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-home"></i> EPİAŞ</button>
+          <button class="btn"><i class="fas fa-home"></i> EPDK</button>
+          <button class="btn"><i class="fas fa-home"></i> TEİAŞ</button>
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 4 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingFour">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#leftCollapseFour" aria-expanded="false" aria-controls="leftCollapseFour">
+            <i class="fas fa-user"></i> Profil Bili
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseFour" class="collapse" aria-labelledby="leftHeadingFour" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-user"></i>Giriş Yap</button>
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 5 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingFive">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#leftCollapseFive" aria-expanded="false" aria-controls="leftCollapseFive">
+            <i class="fas fa-envelope"></i>İletişim
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseFive" class="collapse" aria-labelledby="leftHeadingFive" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-envelope"></i>İletişim Kur </button>
+        </div>
+      </div>
+    </div>
+    <!-- Accordion 6 -->
+    <div class="card">
+      <div class="card-header" id="leftHeadingSix">
+        <h5 class="mb-0">
+          <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#leftCollapseSix" aria-expanded="false" aria-controls="leftCollapseSix">
+            <i class="fas fa-calendar"></i> Hakkımızda
+          </button>
+        </h5>
+      </div>
+      <div id="leftCollapseSix" class="collapse" aria-labelledby="leftHeadingSix" data-parent="#leftAccordion">
+        <div class="card-body">
+          <button class="btn"><i class="fas fa-calendar"></i>Ekibimiz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <div id="context-menu" class="context-menu">
+    <div id="coordinates" class="mb-2"></div>
+    <button class="btn" onclick="handleMenuClick('Button 1')">Buton 1</button>
+    <button class="btn" onclick="handleMenuClick('Button 2')">Buton 2</button>
+    <button class="btn" onclick="handleMenuClick('Button 3')">Buton 3</button>
+    <button class="btn" onclick="handleMenuClick('Button 4')">Buton 4</button>
+    <button class="btn" onclick="handleMenuClick('Button 5')">Buton 5</button>
+    <button class="btn" onclick="handleMenuClick('Button 6')">Buton 6</button>
+</div>
+
+
+ <!-- Zoom Controls -->
+ <div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn"><i class="fas fa-plus"></i></button>
+  <button class="zoom-btn" id="zoomOut"><i class="fas fa-minus"></i></button>
+</div>
+
+  <!-- Leaflet JavaScript -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+  <!-- Bootstrap JavaScript -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+  // Leaflet map initialization
+  var map = L.map('harita', {
+      center: [39.9334, 32.8597], // Ankara koordinatları
+      zoom: 6,
+      zoomControl: false // Varsayılan zoom kontrolünü devre dışı bırak
+    });
+ 
+
+  // Toggle panel functions
+  document.getElementById('toggleLeftPanel').addEventListener('click', function() {
+    document.getElementById('leftPanel').classList.toggle('active');
+  });
+
+  document.getElementById('toggleRightPanel').addEventListener('click', function() {
+    document.getElementById('rightPanel').classList.toggle('active');
+  });
+
+  // Zoom controls
+  document.getElementById('zoomIn').addEventListener('click', function() {
+    map.zoomIn();
+  });
+
+  document.getElementById('zoomOut').addEventListener('click', function() {
+    map.zoomOut();
+  });
+
+
+  
+  </script>
+
+
+
+
+
+
+<script>
+
+
+  // Sağ tıklama menüsü ve tablo
+  const contextMenu = document.getElementById('context-menu');
+  const latCell = document.getElementById('lat-coordinate');
+  const lngCell = document.getElementById('lng-coordinate');
+  const fullCoordinatesCell = document.getElementById('full-coordinates');
+
+  // Harita üzerinde sağ tıklama
+  map.on('contextmenu', function(e) {
+      const latlng = e.latlng;
+
+      // Menü konumunu ayarla
+      contextMenu.style.left = `${e.originalEvent.pageX}px`;
+      contextMenu.style.top = `${e.originalEvent.pageY}px`;
+      contextMenu.style.display = 'block';
+      
+      // Tabloyu güncelle
+      latCell.innerText = latlng.lat.toFixed(10);
+      lngCell.innerText = latlng.lng.toFixed(10);
+      fullCoordinatesCell.innerText = `${latlng.lat.toFixed(7)}, ${latlng.lng.toFixed(7)}`;
+  });
+
+  // Sağ tıklama menüsünü gizleme
+  document.addEventListener('click', function(e) {
+      if (!contextMenu.contains(e.target)) {
+          contextMenu.style.display = 'none';
+      }
+  });
+
+  // Menü butonlarına tıklama işlevleri
+  function handleMenuClick(buttonLabel) {
+      alert(`${buttonLabel} tıklandı`);
+      // Burada butonlara özel işlemler yapabilirsiniz
+      // Örneğin, haritaya işaretçi ekleme, verileri gönderme vs.
+  }
+</script>
+
+
+
+<style>
+/* Panel başlangıçta gizli olacak */
+.yenipanel1 {
+  display: none; /* Başlangıçta gizli */
+  position: fixed; /* Sabit konum */
+  bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+  left:  0%; /* Soldan sıfır */
+  right:  0%; /* Soldan sıfır */
+  width: 100%; /* Tam genişlik */
+  background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+  border-top: 1px solid #ddd; /* Üst sınır */
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+  padding: 5px; /* İç boşluk */
+  z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+  box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+  height: 40px; /* Yükseklik 50px */
+}
+
+/* Kapatma butonu stili */
+.close-btn1 {
+  background: none;
+  border: none;
+  font-size: 10px;
+  color: #f00;
+  cursor: pointer;
+  float: right;
+}
+</style>
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel2 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn2 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel3 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn3 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel4 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn4 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel5 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn5 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel6 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn6 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+
+
+<style>
+  /* Panel başlangıçta gizli olacak */
+  .yenipanel7 {
+    display: none; /* Başlangıçta gizli */
+    position: fixed; /* Sabit konum */
+    bottom: 62px; /* Bottom panelin üstünde 5px boşluk bırakacak şekilde konumlandır */
+    left:  0%; /* Soldan sıfır */
+    right:  0%; /* Soldan sıfır */
+    width: 100%; /* Tam genişlik */
+    background-color: #fcf8f8; /* Koyu siyah arka plan rengi */
+    border-top: 1px solid #ddd; /* Üst sınır */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Gölge */
+    padding: 5px; /* İç boşluk */
+    z-index: 1001; /* Bottom panelin üstünde görünmesi için */
+    box-sizing: border-box; /* İç boşluk ve sınırları genişliğe dahil et */
+    height: 40px; /* Yükseklik 50px */
+  }
+  
+  /* Kapatma butonu stili */
+  .close-btn7 {
+    background: none;
+    border: none;
+    font-size: 10px;
+    color: #f00;
+    cursor: pointer;
+    float: right;
+  }
+  </style>
+
+<!-- Yeni Panel (yenipanel1) -->
+<div class="yenipanel1" id="yenipanel1">
+  <button class="btn btn-danger close-btn1" id="closePanelBtn1">&times;</button>
+  <p>Panel1:</p>
+</div>
+
+<!-- Yeni Panel (yenipanel2) -->
+<div class="yenipanel2" id="yenipanel2">
+  <button class="btn btn-danger close-btn2" id="closePanelBtn2">&times;</button>
+  <p>Panel2:</p>
+</div>
+<!-- Yeni Panel (yenipanel3) -->
+<div class="yenipanel3" id="yenipanel3">
+  <button class="btn btn-danger close-btn3" id="closePanelBtn3">&times;</button>
+  <p>Panel3:</p>
+</div>
+<!-- Yeni Panel (yenipanel4) -->
+<div class="yenipanel4" id="yenipanel4">
+  <button class="btn btn-danger close-btn4" id="closePanelBtn4">&times;</button>
+  <p>Panel4:</p>
+</div>
+<!-- Yeni Panel (yenipanel5) -->
+<div class="yenipanel5" id="yenipanel5">
+  <button class="btn btn-danger close-btn5" id="closePanelBtn5">&times;</button>
+  <p>Panel5:</p>
+</div>
+<!-- Yeni Panel (yenipanel6) -->
+<div class="yenipanel6" id="yenipanel6">
+  <button class="btn btn-danger close-btn6" id="closePanelBtn6">&times;</button>
+  <p>Panel6:</p>
+</div>
+<!-- Yeni Panel (yenipanel7) -->
+<div class="yenipanel7" id="yenipanel7">
+  <button class="btn btn-danger close-btn7" id="closePanelBtn7">&times;</button>
+  <p>Panel7:</p>
+</div>
+
+
+
+
+
+ 
+
+
+
+ 
+ 
+ 
+
+
+
+<script>
+  const openPanelButton1 = document.getElementById('altbuton1');
+  const panel1 = document.getElementById('yenipanel1');
+  const closePanelButton1 = document.getElementById('closePanelBtn1');
+  openPanelButton1.addEventListener('click', () => {
+    panel1.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton1.addEventListener('click', () => {
+    panel1.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+<script>
+  const openPanelButton2 = document.getElementById('altbuton2');
+  const panel2 = document.getElementById('yenipanel2');
+  const closePanelButton2 = document.getElementById('closePanelBtn2');
+  openPanelButton2.addEventListener('click', () => {
+    panel2.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton2.addEventListener('click', () => {
+    panel2.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+
+
+
+<script>
+  const openPanelButton3 = document.getElementById('altbuton3');
+  const panel3 = document.getElementById('yenipanel3');
+  const closePanelButton3 = document.getElementById('closePanelBtn3');
+  openPanelButton3.addEventListener('click', () => {
+    panel3.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton3.addEventListener('click', () => {
+    panel3.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+
+<script>
+  const openPanelButton4= document.getElementById('altbuton4');
+  const panel4 = document.getElementById('yenipanel4');
+  const closePanelButton4 = document.getElementById('closePanelBtn4');
+  openPanelButton4.addEventListener('click', () => {
+    panel4.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton4.addEventListener('click', () => {
+    panel4.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+
+
+<script>
+  const openPanelButton5 = document.getElementById('altbuton5');
+  const panel5 = document.getElementById('yenipanel5');
+  const closePanelButton5 = document.getElementById('closePanelBtn5');
+  openPanelButton5.addEventListener('click', () => {
+    panel5.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton5.addEventListener('click', () => {
+    panel5.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+
+
+<script>
+  const openPanelButton6 = document.getElementById('altbuton6');
+  const panel6 = document.getElementById('yenipanel6');
+  const closePanelButton6 = document.getElementById('closePanelBtn6');
+  openPanelButton6.addEventListener('click', () => {
+    panel6.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton6.addEventListener('click', () => {
+    panel6.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+
+
+
+
+
+<script>
+  const openPanelButton7 = document.getElementById('altbuton7');
+  const panel7 = document.getElementById('yenipanel7');
+  const closePanelButton7= document.getElementById('closePanelBtn7');
+  openPanelButton7.addEventListener('click', () => {
+    panel7.style.display = 'block'; // Paneli görünür yap
+  });
+  closePanelButton7.addEventListener('click', () => {
+    panel7.style.display = 'none'; // Paneli gizle
+  });
+  </script>
+ 
+
+
+ <!---------------- Harita Altlıkları------------->     
+        
+   
+ <script> 
+
+mapcheckbox1.addEventListener('change', function() {
+            if (mapcheckbox1.checked) {
+                check_isaret_evet_1(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_1(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+         // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+          function check_isaret_evet_1() {
+           osmharita= L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        }
+
+        // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+        function check_isaret_hayir_1() {
+           map.removeLayer(osmharita);
+        }
+      
+
+
+
+  mapcheckbox2.addEventListener('change', function() {
+      if (mapcheckbox2.checked) {
+          check_isaret_evet_2(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_2(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_2() {
+     googleTerrain = L.tileLayer('http://{s}.google.com/vt?lyrs=p&x={x}&y={y}&z={z}',{
+maxZoom: 20,
+subdomains:['mt0','mt1','mt2','mt3']
+});
+map.addLayer(googleTerrain)
+
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_2() {
+     map.removeLayer(googleTerrain);
+  }
+      
+
+
+  mapcheckbox3.addEventListener('change', function() {
+      if (mapcheckbox3.checked) {
+          check_isaret_evet_3(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_3(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_3() {
+       googleStreets = L.tileLayer('http://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}',{
+maxZoom: 20,
+subdomains:['mt0','mt1','mt2','mt3']
+});
+
+
+map.addLayer(googleStreets);
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_3() {
+     map.removeLayer(googleStreets);
+  }
+     
+
+
+
+
+
+
+
+  mapcheckbox4.addEventListener('change', function() {
+      if (mapcheckbox4.checked) {
+   
+          check_isaret_evet_4(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_4(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_4() {
+          
+googleSat = L.tileLayer('http://{s}.google.com/vt?lyrs=s&x={x}&y={y}&z={z}',{
+maxZoom: 20,
+subdomains:['mt0','mt1','mt2','mt3']
+});
+
+map.addLayer(googleSat)
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_4() {
+     map.removeLayer(googleSat);
+  }
+     
+     
+     
+     
+     
+     
+     
+  mapcheckbox5.addEventListener('change', function() {
+      if (mapcheckbox5.checked) {
+          check_isaret_evet_5(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_5(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_5() {
+    googleHybrid = L.tileLayer('http://{s}.google.com/vt?lyrs=s,h&x={x}&y={y}&z={z}',{
+maxZoom: 20,
+subdomains:['mt0','mt1','mt2','mt3']
+});
+map.addLayer(googleHybrid)
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_5() {
+     map.removeLayer(googleHybrid);
+  }
+
+
+
+
+
+
+       
+  mapcheckbox6.addEventListener('change', function() {
+      if (mapcheckbox6.checked) {
+          check_isaret_evet_6(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_6(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_6() {
+     siyahbeyaz= L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+subdomains: 'abcd',
+maxZoom: 19,
+}).addTo(map);
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_6() {
+     map.removeLayer(siyahbeyaz);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  mapcheckbox7.addEventListener('change', function() {
+      if (mapcheckbox7.checked) {
+          check_isaret_evet_7(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_7(); // İşaret kaldırıldığında
+      }
+  });  
+
+   // Checkbox işaretlendiğinde çağrılacak fonksiyon       
+    function check_isaret_evet_7() {
+     sym= L.tileLayer.wms('https://tucbs-public-api.csb.gov.tr/trk_srtm_wms', {
+                    layers: '0',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                    attribution: 'ATLAS'  // Kaynak atıfı  
+}).addTo(map);
+  }
+
+  // Checkbox işaret kaldırıldığında çağrılacak fonksiyon
+  function check_isaret_hayir_7() {
+     map.removeLayer(sym);
+  }
+
+    
+</script>     
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+<script>
+       wmscheckbox1.addEventListener('change', function() {
+            if (wmscheckbox1.checked) {
+                check_isaret_evet_box11(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box11(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box11() {
+ wmsLayer11 = L.tileLayer.wms('https://cbs.ogm.gov.tr/arcgis/services/YAYIN/MESCERE/MapServer/WmsServer', {
+                    layers: '0',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                    attribution: 'OGM',  // Kaynak atıfı
+                    opacity: 0.5 
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box11() {
+           map.removeLayer(wmsLayer11);
+        }
+   
+/////////////// wms ekle//////////////////
+wmscheckbox2.addEventListener('change', function() {
+            if (wmscheckbox2.checked) {
+                check_isaret_evet_box12(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box12(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box12() {
+                        wmsLayer12 = L.tileLayer.wms('http://tvksaysgis.csb.gov.tr/geoserver/atlas/ows', {
+                    layers: 'VatandasSitAlani', // WMS layer adı
+                    format: 'image/png',
+                    transparent: true
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box12() {
+           map.removeLayer(wmsLayer12);
+        }
+      
+      
+/////////////// wms ekle//////////////////
+wmscheckbox3.addEventListener('change', function() {
+            if (wmscheckbox3.checked) {
+                check_isaret_evet_box13(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box13(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box13() {
+           wmsLayer13 = L.tileLayer.wms('https://tucbs-public-api.csb.gov.tr/trk_akdgm_uy_RiskliAlan_wms', {
+                    layers: 'YKDB_RiskliAlan',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                    attribution: 'ATLAS'  // Kaynak atıfı
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box13() {
+           map.removeLayer(wmsLayer13);
+        }
+      
+   
+ /////////////// wms ekle//////////////////
+ wmscheckbox4.addEventListener('change', function() {
+            if (wmscheckbox4.checked) {
+                check_isaret_evet_box14(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box14(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box14() {
+          wmsLayer14 =L.tileLayer.wms('http://tvksaysgis.csb.gov.tr/geoserver/atlas/ows?service=WMS', {
+                    layers: 'VatandasAnitAgac',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                    attribution: 'ATLAS'  // Kaynak atıfı 
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box14() {
+           map.removeLayer(wmsLayer14);
+        }
+     
+ /////////////// wms ekle//////////////////
+ wmscheckbox5.addEventListener('change', function() {
+            if (wmscheckbox5.checked) {
+                check_isaret_evet_box15(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box15(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box15() {
+   wmsLayer15 = L.tileLayer.wms('http://tvksaysgis.csb.gov.tr/geoserver/atlas/ows?service=WMS', {
+                    layers: 'VatandasOCKB',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                    attribution: 'ATLAS'  // Kaynak atıfı         
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box15() {
+           map.removeLayer(wmsLayer15);
+        }
+/////////////// wms ekle//////////////////
+wmscheckbox6.addEventListener('change', function() {
+            if (wmscheckbox6.checked) {
+                check_isaret_evet_box16(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box16(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box16() {
+          wmsLayer16 = L.tileLayer.wms('https://tucbs-public-api.csb.gov.tr/trk_mpgm_uy_kiyiKenarCizgisi_wms', {
+                    layers: 'YKDB_kiyiKenarCizgisi',  // Katmanın adı veya indeksi
+                    format: 'image/png',  // Görüntü formatı
+                    transparent: true,  // Saydamlık
+                  
+                 attribution:'ATLAS'  // Kaynak atıfı  
+}).addTo(map);
+        }
+
+        function check_isaret_hayir_box16() {
+           map.removeLayer(wmsLayer16);
+        }
+        
+ /////////////// wms ekle//////////////////
+ wmscheckbox7.addEventListener('change', function() {
+            if (wmscheckbox7.checked) {
+                check_isaret_evet_box17(); // İşaretlendiğinde
+            } else {
+                check_isaret_hayir_box17(); // İşaret kaldırıldığında
+            }
+        });  
+ 
+          function check_isaret_evet_box17() {
+          wmsLayer17 = L.tileLayer.wms('https://tucbs-public-api.csb.gov.tr/trk_dkmpgm_yabanhayati_koruma_ve_gelistirme_sahalari_wms?', {
+            layers: '0',  // WMS katman adı
+            format: 'image/png',
+            transparent: true
+        }).addTo(map);
+        }
+
+        function check_isaret_hayir_box17() {
+           map.removeLayer(wmsLayer17);
+        }
+     
+              
+    </script>     
+    
+    
+
+
+
+
+
+
+   
+
+
+
+
+<style>
+  
+  .custom-icon {
+      font-size: 24px;
+      color: #1E90FF;
+  }
+  .popup-table {
+      width: 100%;
+      border-collapse: collapse;
+  }
+  .popup-table th, .popup-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+  }
+  .popup-table th {
+      background-color: #f2f2f2;
+      text-align: left;
+  }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css"
+<script> src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+  
+  var markers = L.markerClusterGroup();
+
+  // Zoom seviyesini kontrol etmek için bir fonksiyon
+  function checkZoomLevel() {
+      var zoomLevel = map.getZoom();
+      if (zoomLevel >= 8 && zoomLevel <= 20) {
+          if (!map.hasLayer(markers)) {
+              map.addLayer(markers);
+          }
+      } else {
+          if (map.hasLayer(markers)) {
+              map.removeLayer(markers);
+          }
+      }
+  }
+
+  // Zoom değiştiğinde checkZoomLevel fonksiyonunu çağır
+  map.on('zoomend', checkZoomLevel);
+
+  // Font Awesome simgesini oluşturmak için bir fonksiyon
+  function createCustomIcon() {
+      return L.divIcon({
+          className: 'custom-icon',
+          html: '<i class="fa-solid fa-location-pin"></i>',
+          iconSize: [24, 24]
+      });
+  }
+
+  // JSON verilerini popup'ta Bootstrap kullanarak tablo olarak göstermek için bir fonksiyon
+  function generatePopupContent(attributes) {
+      let content = '<div class="container-fluid">';
+      content += '<table class="table table-striped table-bordered">';
+      content += '<thead><tr><th>Attribute</th><th>Value</th></tr></thead>';
+      content += '<tbody>';
+      for (const [key, value] of Object.entries(attributes)) {
+          content += `<tr><td>${key}</td><td>${value}</td></tr>`;
+      }
+      content += '</tbody></table>';
+      content += '</div>';
+      return content;
+  }
+
+  // Veri yükleme ve işleme
+  fetch('https://overpass-api.de/api/interpreter?data=%2F*%0AThis%20has%20been%20generated%20by%20the%20overpass-turbo%20wizard.%0AThe%20original%20search%20was%3A%0A%E2%80%9Cgenerator%3Asource%3Dwind%20%20in%20T%C3%BCrkiye%E2%80%9D%0A*%2F%0A%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%0A%2F%2F%20fetch%20area%20%E2%80%9CT%C3%BCrkiye%E2%80%9D%20to%20search%20in%0Aarea%28id%3A3600174737%29-%3E.searchArea%3B%0A%2F%2F%20gather%20results%0Anwr%5B%22generator%3Asource%22%3D%22wind%22%5D%28area.searchArea%29%3B%0A%2F%2F%20print%20results%0Aout%20qt%3B')
+  .then(response => response.json())
+  .then(data => {
+      data.elements.forEach(element => {
+          if (element.type === 'node') {
+              var marker = L.marker([element.lat, element.lon], { icon: createCustomIcon() })
+                  .bindPopup(generatePopupContent(element.tags || {}));
+              markers.addLayer(marker);
+          }
+      });
+      // Başlangıç zoom seviyesinde işaretçileri ekle
+      checkZoomLevel();
+  })
+  .catch(error => console.error('Error fetching data:', error));
+
+
+
+
+
+
+
+
+
+
+
+  
+</script>
+
+<script>  
+
+  /////////////// wms ekle//////////////////
+  wmscheckbox7.addEventListener('change', function() {
+             if (wmscheckbox7.checked) {
+                 check_isaret_evet_box17(); // İşaretlendiğinde
+             } else {
+                 check_isaret_hayir_box17(); // İşaret kaldırıldığında
+             }
+         });  
+  
+           function check_isaret_evet_box17() {
+           wmsLayer17 = L.tileLayer.wms('https://tucbs-public-api.csb.gov.tr/trk_dkmpgm_yabanhayati_koruma_ve_gelistirme_sahalari_wms?', {
+             layers: '0',  // WMS katman adı
+             format: 'image/png',
+             transparent: true
+         }).addTo(map);
+         }
+  
+         function check_isaret_hayir_box17() {
+            map.removeLayer(wmsLayer17);
+         }
+      
+               
+     </script>     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="./osm_map/millipark.geojson"></script> <!-- geojson dosyasını içeriyor -->
+<script>
+     // GeoJSON verilerini yükleme ve haritaya ekleme
+     var osmtanim_1 = L.geoJSON(osm_1, {
+        onEachFeature: function(feature, layer) {
+            layer.bindPopup('<b>Güneş Santral Adı: </b>' + feature.properties.name);
+        },
+        style: {
+            fillColor: 'yellow',
+            fillOpacity: 0.4,
+            color: 'yellow'
+        }
+   // }).addTo(map); // .addTo(map) doğru yazım
+  }); // .addTo(map) doğru yazım
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  // Ülke ekle
+  layerCheckbox1.addEventListener('change', function() {
+      if (layerCheckbox1.checked) {
+          check_isaret_evet_layerbox1(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_layerbox1(); // İşaret kaldırıldığında
+      }
+  });
+  
+  function check_isaret_evet_layerbox1() {
+      // MESAJ KUTUSU
+      $('#messageInput').val('OSM GeoJson Ülke Sınırları Yükleniyor. Lütfen Bekleyiniz');
+      $('#timeoutInput').val('20000000');
+      // MESAJ KUTUSU
+      showMessage(1);
+      
+      // Script etiketini oluştur ve ekle
+      var script1 = document.createElement('script');
+      script1.src = './osm_map/ulke.geojson';
+  
+      // Script yüklendiğinde çalışacak callback
+      script1.onload = function() {
+          // GeoJSON katmanını ekle
+          osmtanim_3 = L.geoJSON(osm_3, {
+              onEachFeature: function(feature, layer) {
+                  layer.bindPopup('<b>Güneş Santral Adı: </b>' + feature.properties.name);
+              },
+              style: {
+                  fillColor: 'yellow',
+                  fillOpacity: 0.4,
+                  color: 'yellow'
+              }
+          }).addTo(map);
+          $('#messageInput').val('Ülke Sınırı Verileri Başarıyla Yüklendi. Bu Veriyi Resmi İşlerde Kullanmayınız');
+          $('#timeoutInput').val('2000');
+showMessage(2); // 3. model mesajını göster
+      };
+  
+      // Script yüklenemediğinde çalışacak callback
+      script1.onerror = function() {
+        $('#messageInput').val('Ülke Sınırları Verisi Yüklenemedi.'+
+            'Lütfen İnternet Bağlantınızı Kontrol Ediniz.'+
+            'Veri Kaynağında Veri Silinmiş veya'+
+            'Veri Kaynağında Bakıma Alınmış Olabilir.'+
+            ' Çözüm İçin İletişime Geçiniz');
+          $('#timeoutInput').val('2000');
+showMessage(3); // 3. model mesajını göster
+      };
+  
+      document.body.appendChild(script1);
+  }
+  
+  function check_isaret_hayir_layerbox1() {
+      map.removeLayer(osmtanim_3);
+  }
+  
+  // İl ekle
+  layerCheckbox2.addEventListener('change', function() {
+      if (layerCheckbox2.checked) {
+          check_isaret_evet_layerbox2(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_layerbox2(); // İşaret kaldırıldığında
+      }
+  });
+  
+  function check_isaret_evet_layerbox2() {
+      // MESAJ KUTUSU
+      $('#messageInput').val('OSM GeoJson İl Sınırları Yükleniyor. Lütfen Bekleyiniz');
+      $('#timeoutInput').val('200000000');
+      // MESAJ KUTUSU
+      showMessage(1);
+      
+      // Script etiketini oluştur ve ekle
+      var script2 = document.createElement('script');
+      script2.src = './osm_map/il.geojson';
+  
+      // Script yüklendiğinde çalışacak callback
+      script2.onload = function() {
+          // GeoJSON katmanını ekle
+          osmtanim_4 = L.geoJSON(osm_4, {
+              onEachFeature: function(feature, layer) {
+                  layer.bindPopup('<b>Güneş Santral Adı: </b>' + feature.properties.name);
+              },
+              style: {
+                  fillColor: 'yellow',
+                  fillOpacity: 0.4,
+                  color: 'yellow'
+              }
+          }).addTo(map);
+          $('#messageInput').val('İl Sınırı Verileri Başarıyla Yüklendi. Bu Veriyi Resmi İşlerde Kullanmayınız');
+          $('#timeoutInput').val('2000');
+showMessage(2); // 3. model mesajını göster
+      };
+  
+      // Script yüklenemediğinde çalışacak callback
+      script2.onerror = function() {
+        $('#messageInput').val('İl Sınırları Verisi Yüklenemedi.'+
+            'Lütfen İnternet Bağlantınızı Kontrol Ediniz.'+
+            'Veri Kaynağında Veri Silinmiş veya'+
+            'Veri Kaynağında Bakıma Alınmış Olabilir.'+
+            ' Çözüm İçin İletişime Geçiniz');
+          $('#timeoutInput').val('20000');
+showMessage(3); // 3. model mesajını göster
+      };
+  
+      document.body.appendChild(script2);
+  }
+  
+  function check_isaret_hayir_layerbox2() {
+      map.removeLayer(osmtanim_4);
+  }
+  
+  // İlçe ekle
+  layerCheckbox3.addEventListener('change', function() {
+      if (layerCheckbox3.checked) {
+          check_isaret_evet_layerbox3(); // İşaretlendiğinde
+      } else {
+          check_isaret_hayir_layerbox3(); // İşaret kaldırıldığında
+      }
+  });
+  
+  function check_isaret_evet_layerbox3() {
+      // MESAJ KUTUSU
+      $('#messageInput').val('OSM GeoJson İlçe Sınırları Yükleniyor. Lütfen Bekleyiniz');
+      $('#timeoutInput').val('20000000');
+      // MESAJ KUTUSU
+      showMessage(1);
+      
+      // Script etiketini oluştur ve ekle
+      var script3 = document.createElement('script');
+      script3.src = './osm_map/ilce.geojson';
+  
+      // Script yüklendiğinde çalışacak callback
+      script3.onload = function() {
+          // GeoJSON katmanını ekle
+          osmtanim_5 = L.geoJSON(osm_5, {
+              onEachFeature: function(feature, layer) {
+                  layer.bindPopup('<b>Güneş Santral Adı: </b>' + feature.properties.name);
+              },
+              style: {
+                  fillColor: 'yellow',
+                  fillOpacity: 0.4,
+                  color: 'yellow'
+              }
+          }).addTo(map);
+          $('#messageInput').val('İlçe Sınırı Verileri Başarıyla Yüklendi. Bu Veriyi Resmi İşlerde Kullanmayınız');
+          $('#timeoutInput').val('2000');
+showMessage(2); // 3. model mesajını göster
+      };
+  
+      // Script yüklenemediğinde çalışacak callback
+      script3.onerror = function() {
+        $('#messageInput').val('İlçe Sınırları Verisi Yüklenemedi.'+
+            'Lütfen İnternet Bağlantınızı Kontrol Ediniz.'+
+            'Veri Kaynağında Veri Silinmiş veya'+
+            'Veri Kaynağında Bakıma Alınmış Olabilir.'+
+            ' Çözüm İçin İletişime Geçiniz');
+          $('#timeoutInput').val('20000');
+showMessage(3); // 3. model mesajını göster
+      };
+  
+      document.body.appendChild(script3);
+  }
+  
+  function check_isaret_hayir_layerbox3() {
+      map.removeLayer(osmtanim_5);
+  }
+  </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+  <script>
+  var isExecuted = false;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sayfa yüklendiğinde checkbox5'i otomatik işaretleyelim
+    var mapcheckbox6 = document.getElementById('mapcheckbox6');
+    mapcheckbox6.checked = true;
+  
+    // Fonksiyonun bir kere çalışmasını sağlama
+    if (!isExecuted) {
+      check_isaret_evet_6();
+      isExecuted = true;
+    }
+  });
+  </script>
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+
+
+
+
+
+ <style>
+  /* Modal tipi 1 için arka plan rengi koyu gri */
+  .modal-type-1 .modal-content {
+      background-color: #6c757d; /* Koyu gri */
+      color: #ffffff; /* Beyaz yazı rengi */
+      border-color: #495057; /* Koyu gri sınır */
+  }
+
+  /* Modal tipi 2 için arka plan rengi canlı yeşil */
+  .modal-type-2 .modal-content {
+      background-color: #28a745; /* Canlı yeşil */
+      color: #ffffff; /* Beyaz yazı rengi */
+      border-color: #1e7e34; /* Koyu yeşil sınır */
+  }
+
+  /* Modal tipi 3 için arka plan rengi parlak kırmızı */
+  .modal-type-3 .modal-content {
+      background-color: #dc3545; /* Parlak kırmızı */
+      color: #ffffff; /* Beyaz yazı rengi */
+      border-color: #c82333; /* Koyu kırmızı sınır */
+  }
+
+  /* Modal boyutlandırma ve konumlandırma */
+  .modal-dialog {
+      max-width: 500px; /* Maksimum genişlik */
+  }
+
+  .modal-dialog-centered {
+      display: flex;
+      align-items: center;
+      min-height: calc(100% - 1rem);
+  }
+
+  /* Kapat butonu için CSS (önceden gizli) */
+  .modal-footer .btn-close {
+      display: none;
+  }
+
+  /* Kapat butonunu sadece Tip 2 ve Tip 3 için göster */
+  .modal-type-2 .btn-close,
+  .modal-type-3 .btn-close {
+      display: inline-block;
+  }
+
+  /* Gizli metin kutuları */
+  .hidden-input {
+     display: none;
+  }
+</style>
+
+
+
+
+
+<!-- Mesaj Ekranı (Bootstrap Modal) -->
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="messageModalLabel">Bilgilendirme</h5>
+              <button type="button" class="close btn-close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body" id="messageBody">
+              Buraya mesajınız yazılacak.
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-light btn-close" data-dismiss="modal">Kapat</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<!-- Gizli Mesaj ve Kapatılma Süresi Giriş Kutuları -->
+<div class="container mt-3">
+  <input type="text" class="form-control hidden-input" id="messageInput" placeholder="Mesajınızı buraya yazın">
+  <input type="number" class="form-control hidden-input" id="timeoutInput" placeholder="Kapatılma süresini milisaniye olarak girin">
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    // Modalı göster ve önceki modali kapat
+       // Modalı göster ve önceki modali kapat
+       function showMessage(type) {
+        var modal = $('#messageModal');
+        var messageBody = $('#messageBody');
+        var messageInput = $('#messageInput').val(); // Textbox'tan mesajı al
+        var timeoutInput = parseInt($('#timeoutInput').val()); // Textbox'tan kapanma süresini al
+
+
+        if (type === 3){
+          $('#timeoutInput').val('15000');
+          var timeoutInput = parseInt($('#timeoutInput').val()); // Textbox'tan kapanma süresini al
+
+        }
+
+
+
+        
+        // Kapanma süresinin geçerli olup olmadığını kontrol et
+        if (isNaN(timeoutInput) || timeoutInput <= 0) {
+            alert('Lütfen geçerli bir kapatma süresi girin.');
+            return;
+        }
+
+        // Önceden açık olan modalı kapat
+        $('.modal').not('#messageModal').modal('hide');
+        
+        modal.removeClass('modal-type-1 modal-type-2 modal-type-3'); // Önceki tipleri kaldır
+
+        // Mesaj ve stil ayarlarını belirle
+        if (type === 1) {
+            modal.addClass('modal-type-1');
+            messageBody.text(messageInput || 'Bu Tip 1 mesajıdır.');
+            $('.btn-close').hide(); // Kapat butonunu gizle
+            // Modalı belirtilen süre sonra kapat
+            setTimeout(function() {
+                modal.modal('hide');
+            }, timeoutInput); // Kullanıcının belirlediği süre kadar kapalı kalır
+        } else if (type === 2) {
+            modal.addClass('modal-type-2');
+            messageBody.text(messageInput || 'Bu Tip 2 mesajıdır.');
+            $('.btn-close').show(); // Kapat butonunu göster
+            // Modalı belirtilen süre sonra kapat
+            setTimeout(function() {
+                modal.modal('hide');
+            }, timeoutInput); // Kullanıcının belirlediği süre kadar kapalı kalır
+        } else if (type === 3) {
+
+          
+            modal.addClass('modal-type-3');
+            messageBody.text(messageInput || 'Bu Tip 3 mesajıdır.');
+            $('.btn-close').show(); // Kapat butonunu göster
+            // Model 3'te otomatik kapanma yok, kapanma süresi yok
+        }
+        modal.modal('show');
+    }
+
+ 
+</script>
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+
+
+</body>
+</html>
